@@ -15,8 +15,6 @@ cdef class TemplateFit:
 	cdef double [:,:] templates
 	cdef double [:] priors
 
-	cpdef _load_template_file(self)
-		
 	cdef int _compute_probz(self,
 						double [:] precomp_gauss,
 						double [:,:] temp,
@@ -28,10 +26,9 @@ cdef class TemplateFit:
 						int width_hr
 						) nogil
 
-	
 	cdef double [:] _precompute_gaussian(self, double sigma, int *width, int *width_hr)
 	
-	cpdef double template_fit(self, 
+	cpdef double [:,:] template_fit(self, 
 				double [:] z,
 				double [:] flux,
 				double [:] invnoisevar,

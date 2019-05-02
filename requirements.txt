@@ -1,0 +1,5 @@
+# standard dependencies
+
+numpy
+cython
+cythongsl

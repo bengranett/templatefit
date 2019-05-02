@@ -8,7 +8,6 @@ cimport numpy as np
 cimport libc.math as math
 # from cython.parallel import prange
 
-from pypelid.utils import filetools
 from pypelid.utils import consts
 
 DEF EXP_LIMIT = -10
@@ -16,17 +15,16 @@ DEF BIGNEGNUM = -1e10
 
 cdef class TemplateFit:
 	
-	def __init__(self,
-					optics,
-					config,
+	def __init__(self, wavelength_scale,
 					lines=None,
 					conv_limit=3,
 					res=2,
-					**kwargs
+					templates = None,
+					priors = None,
+					template_file = None,
 					):
 		""" """
 		self.logger = logging.getLogger(self.__class__.__name__)
-		self.config = config
 
 		if lines is None:
 			lines = consts.line_list.keys()
@@ -34,31 +32,32 @@ cdef class TemplateFit:
 		self.lines = lines
 
 		self.res = res
-##
+		self.conv_limit = conv_limit
 
-#		print len(optics)
-		for i in range(len(optics)):
-			self.lam_start, self.lam_end = optics[0].config['lambda_range']
-			if optics[i].config['lambda_range'][0] < self.lam_start:
-				self.lam_start = optics[i].config['lambda_range'][0]
-			if optics[i].config['lambda_range'][1] > self.lam_end:
-				self.lam_end = optics[i].config['lambda_range'][1]
-
-##
-#		self.lam_start, self.lam_end = optics[0].config['lambda_range']
-#		self.lam_start, self.lam_end = optics['lambda_range']
-		self.lam_step = optics[0].config['pix_disp'][1]
-#		self.lam_step = optics['pix_disp'][1]
-
-		self._load_template_file()
-
-		self.rest_wavelengths = self._rest_wavelengths()
+		self.lam_step = wavelength_scale[1] - wavelength_scale[0]
+		if not self.lam_step > 0:
+			raise ValueError("Wavelength scale must be increasing (got %s)", str(wavelength_scale[:10]))
 
 		self.inv_lam_step = 1./self.lam_step
 		assert np.isfinite(self.inv_lam_step)
-		self.conv_limit = conv_limit
-		self.nlines = self.rest_wavelengths.shape[0]
+
+		self.lam_start = wavelength_scale[0]
+		self.lam_end = wavelength_scale[wavelength_scale.shape[0]-1]
+
+		self.init_templates(filename=template_file)
+
+
+	def init_templates(self, templates=None, priors=None, filename=None):
+		""" """
+		if filename is not None:
+			self._load_template_file(filename)
+		else:
+			self.templates = templates
+			self.priors = priors
+
 		self.ntemplates = self.templates.shape[0]
+		self.rest_wavelengths = self._rest_wavelengths()
+		self.nlines = self.rest_wavelengths.shape[0]
 
 		# determine redshift limits of template fit
 		self.zmin = self.lam_start / np.max(self.rest_wavelengths) - 1
@@ -69,10 +68,9 @@ cdef class TemplateFit:
 		logging.info("template fit start %f end %f",self.lam_start, self.lam_end)
 		logging.info("template fit zmin %f zmax %f",self.zmin, self.zmax)
 
-	cpdef _load_template_file(self):
+
+	def _load_template_file(self, filename):
 		""" """
-		filename = filetools.get_path(self.config['in_dir'], self.config['zmeas_template_file'])
-		logging.debug("filename %s",filename)
 		if not os.path.exists(filename):
 			raise IOError("File does not exist: %s"%filename)
 
@@ -264,8 +262,8 @@ cdef class TemplateFit:
 
 		return x
 
-	cpdef double template_fit(self, 
-				double [:] z,
+	cpdef double [:,:] template_fit(self, 
+				double [:] zgrid,
 				double [:] flux,
 				double [:] invnoisevar,
 				double radius,
@@ -274,7 +272,7 @@ cdef class TemplateFit:
 
 		Parameters
 		----------
-		z : numpy.ndarray
+		zgrid : numpy.ndarray
 			array of redshift values to try
 		flux : numpy.ndarray
 			spectral flux
@@ -296,7 +294,7 @@ cdef class TemplateFit:
 		cdef double [:] priors = self.priors
 
 		n = flux.shape[0]
-		nz = z.shape[0]
+		nz = zgrid.shape[0]
 		cdef double [:,:] temp = np.zeros((self.ntemplates, n), dtype=np.float)
 		cdef double [:] amp = np.zeros(self.ntemplates, dtype=np.float)
 		cdef double [:,:] amp_all = np.zeros((nz, self.ntemplates), dtype=np.float)
@@ -305,19 +303,14 @@ cdef class TemplateFit:
 
 		precomp_gauss = self._precompute_gaussian(sigma, &width, &width_hr)
 
-		# logging.debug("widths %f %f", width, width_hr)
-		# logging.debug("gauss %s",str(np.array(precomp_gauss)))
-
 		max_amp = BIGNEGNUM
 
 		for i in range(nz):
 			pz[i] = 0
-			success = self._compute_probz(precomp_gauss, temp, amp, flux, invnoisevar, z[i], width, width_hr)
+			success = self._compute_probz(precomp_gauss, temp, amp, flux, invnoisevar, zgrid[i], width, width_hr)
 
 			if not success:
 				continue
-
-			# logging.debug("z %f success %i flux %s noise %s amp %f", z[i], success, np.mean(flux), np.mean(invnoisevar), amp[0])
 
 			for j in range(self.ntemplates):
 				if amp[j] == 0:
@@ -327,18 +320,8 @@ cdef class TemplateFit:
 				if amp[j] > max_amp:
 					max_amp = amp[j]
 
-		logging.info("max_amp %f", max_amp)
+		return amp_all
 
-		if nz > 1:
-			for i in range(nz):
-				for j in range(self.ntemplates):
-					d = 0.5 * (amp_all[i, j] - max_amp)
-					assert d <= 0
-					if d < EXP_LIMIT:
-						continue
-					pz[i] += math.exp(d) * priors[j]
-
-		return max_amp
 
 class MeasureError(Exception):
 	pass
