@@ -1,4 +1,16 @@
 
+cdef inline double max2(double [:,:] x) nogil:
+	""" Return the maximum element in a 2D array. """
+	cdef int i, j;
+	cdef double m;
+	m = x[0,0]
+	for i in range(x.shape[0]):
+		for j in range(x.shape[1]):
+			if x[i,j] > m:
+				m = x[i,j]
+	return m
+
+
 cdef class TemplateFit:
 
 	cdef object logger
@@ -11,13 +23,20 @@ cdef class TemplateFit:
 	cdef double lam_start, lam_end, lam_step, inv_lam_step, conv_limit
 	cdef int res, nlines, ntemplates
 
+	cdef public double [:] redshift_grid
+	cdef double [:] _pz
+	cdef public double [:,:] loglike
+
 	cdef double [:] rest_wavelengths
 	cdef double [:,:] templates
-	cdef double [:] priors
+	cdef double [:] prior_template
+	cdef double [:] prior_z_grid
+	cdef double [:,:] temp
+	cdef double [:] amp
+
 
 	cdef int _compute_probz(self,
 						double [:] precomp_gauss,
-						double [:,:] temp,
 						double [:] amp_temp, 
 						double [:] flux,
 						double [:] invnoisevar,
@@ -28,9 +47,10 @@ cdef class TemplateFit:
 
 	cdef double [:] _precompute_gaussian(self, double sigma, int *width, int *width_hr)
 	
-	cpdef double [:,:] template_fit(self, 
-				double [:] z,
+	cpdef double template_fit(self, 
 				double [:] flux,
 				double [:] invnoisevar,
-				double radius,
-				double [:] pz)
+				double sigma)
+
+	cpdef double[:] pz(self)
+	cpdef double[:] combine_pz(self, TemplateFit fit2)
