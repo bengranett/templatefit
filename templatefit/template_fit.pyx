@@ -276,7 +276,7 @@ cdef class TemplateFit:
 
 		return x
 
-	cpdef double template_fit(self, 
+	cpdef double template_fit(self,
 				double [:] flux,
 				double [:] invvar,
 				double sigma):
@@ -331,7 +331,50 @@ cdef class TemplateFit:
 
 					if amp[j] > max_amp:
 						max_amp = amp[j]
+		return max_amp
 
+	cpdef double template_fit_at_z(self,
+				double z,
+				double [:] flux,
+				double [:] invvar,
+				double sigma):
+		""" Run template fit
+
+		Parameters
+		----------
+		z : double
+			array of redshift values to try
+		flux : numpy.ndarray
+			spectral flux (arbitrary units)
+		invvar : numpy.ndarray
+			inverse of variance on the flux
+		sigma: double
+			line width in stddev (pixel units)
+
+		Returns
+		-------
+		numpy.ndarray : p(z) values (un-normalized)
+		"""
+		cdef int i, j, n, success
+		cdef double d, max_amp
+		cdef int width=0, width_hr=0
+		cdef double[:] precomp_gauss
+
+		n = flux.shape[0]
+
+		cdef double [:] amp = self.amp
+
+		precomp_gauss = self._precompute_gaussian(sigma, &width, &width_hr)
+
+		max_amp = 0
+
+		with nogil:
+
+			success = self._compute_probz(precomp_gauss, amp, flux, invvar, z, width, width_hr)
+
+			for j in range(self.ntemplates):
+				if amp[j] > max_amp:
+					max_amp = amp[j]
 		return max_amp
 
 	cpdef double[:] pz(self):

@@ -47,10 +47,16 @@ cdef class TemplateFit:
 
 	cdef double [:] _precompute_gaussian(self, double sigma, int *width, int *width_hr)
 	
-	cpdef double template_fit(self, 
-				double [:] flux,
-				double [:] invnoisevar,
-				double sigma)
+	cpdef double template_fit(self,
+							double [:] flux,
+							double [:] invnoisevar,
+							double sigma)
+
+	cpdef double template_fit_at_z(self,
+							double z,
+							double [:] flux,
+							double [:] invvar,
+							double sigma)
 
 	cpdef double[:] pz(self)
 	cpdef double[:] combine_pz(self, TemplateFit fit2)

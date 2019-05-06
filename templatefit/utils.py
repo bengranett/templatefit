@@ -18,3 +18,4 @@ def load_template_file(filename):
         priors = np.array([priors])
 
     return templates_data, priors
+
