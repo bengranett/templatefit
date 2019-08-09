@@ -71,6 +71,8 @@ cdef class TemplateFit:
 		templates = []
 
 		for line in self.line_list.keys():
+			if not line in templates_data.dtype.names:
+				continue
 			lines.append(line)
 			templates.append(templates_data[line])
 
