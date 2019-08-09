@@ -17,7 +17,3 @@ except:
         from . version import version as __version__
     except:
         pass
-
-__all__ = ['template_fit']
-
-from template_fit import TemplateFit

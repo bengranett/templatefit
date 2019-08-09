@@ -8,18 +8,16 @@ from scipy import interpolate
 
 cimport libc.math as math
 
-from pypelid.utils import consts
-
-import utils
+from . import utils
 
 DEF EXP_LIMIT = -10
 DEF BIGNEGNUM = -1e10
 
 cdef class TemplateFit:
-	
+
 	def __init__(self, wavelength_scale,
 					redshift_grid,
-					lines=None,
+					line_list,
 					conv_limit=3,
 					res=2,
 					template_file=None,
@@ -35,10 +33,7 @@ cdef class TemplateFit:
 
 		self.init_wavelength_scale(wavelength_scale)
 
-		if lines is None:
-			lines = consts.line_list.keys()
-			lines.sort()
-		self.lines = lines
+		self.line_list = line_list
 
 		self.init_templates(filename = template_file)
 
@@ -75,10 +70,7 @@ cdef class TemplateFit:
 		lines = []
 		templates = []
 
-		for line in self.lines:
-			if not line in templates_data.dtype.names:
-				logging.warning("Line missing from template file `%s`: %s", filename, line)
-				continue
+		for line in self.line_list.keys():
 			lines.append(line)
 			templates.append(templates_data[line])
 
@@ -129,15 +121,13 @@ cdef class TemplateFit:
 		""" """
 		rest_wavelengths = []
 		for line in self.lines:
-			if not line in consts.line_list:
-				raise MeasureError("Line named '%s' is not in consts.line_list!", line)
-			rest_wavelengths.append(consts.line_list[line])
-			self.logger.debug("Line %s: %f A", line, consts.line_list[line])
+			rest_wavelengths.append(self.line_list[line])
+			self.logger.debug("Line %s: %f A", line, self.line_list[line])
 		return np.array(rest_wavelengths)
 
 	cdef int _compute_probz(self,
 						double [:] precomp_gauss,
-						double [:] amp_temp, 
+						double [:] amp_temp,
 						double [:] flux,
 						double [:] invnoisevar,
 						double z,
@@ -163,7 +153,7 @@ cdef class TemplateFit:
 		"""
 		cdef int i, pix, tempi, window_low, window_high
 		cdef double obs_wave, norm, amp, pix_f
-		
+
 		cdef int n = flux.shape[0]
 		cdef int got_a_line = 0
 
@@ -404,7 +394,7 @@ cdef class TemplateFit:
 		""" """
 		cdef int i, j
 		cdef double max_amp
-		
+
 		cdef double[:] pz = np.zeros(self.redshift_grid.shape[0])
 
 
