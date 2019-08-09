@@ -15,6 +15,7 @@ cdef class TemplateFit:
 
 	cdef object logger
 	cdef object config
+	cdef object line_list
 	cdef object lines
 
 	cdef public double zmin
@@ -37,7 +38,7 @@ cdef class TemplateFit:
 
 	cdef int _compute_probz(self,
 						double [:] precomp_gauss,
-						double [:] amp_temp, 
+						double [:] amp_temp,
 						double [:] flux,
 						double [:] invnoisevar,
 						double z,
@@ -46,7 +47,7 @@ cdef class TemplateFit:
 						) nogil
 
 	cdef double [:] _precompute_gaussian(self, double sigma, int *width, int *width_hr)
-	
+
 	cpdef double template_fit(self,
 							double [:] flux,
 							double [:] invnoisevar,
