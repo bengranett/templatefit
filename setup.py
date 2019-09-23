@@ -16,8 +16,6 @@
 
 """
 import sys
-if sys.version_info > (3,0) or sys.version_info < (2,7):
-    sys.exit('Sorry, Python 2.7 is required.  Your python version is: %s'%sys.version.split()[0])
 
 # Always prefer setuptools over distutils
 try:
@@ -54,7 +52,7 @@ cython_gsl = import_install("cython_gsl", "cythongsl")
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-os.system("git describe && echo version = \\\"`git describe`\\\" > templatefit/version.py")
+os.system("git describe --always --dirty --broken && echo version = \\\"`git describe --always --dirty --broken`\\\" > templatefit/version.py")
 os.system("git rev-parse && echo git_revision = \\\"`git rev-parse HEAD`\\\" >> templatefit/version.py")
 
 from templatefit import __version__
@@ -78,7 +76,7 @@ cython_files = [
 
 cython_directives = {
     'embedsignature': True,
-    'language_level': 2,
+    'language_level': 3,
     'boundscheck': False,
     'wraparound': False,
     'nonecheck': False,
@@ -94,7 +92,7 @@ for path in cython_files:
 
 def unlink(path):
     if os.path.exists(path):
-        print >>sys.stderr, "unlink %s"%path
+        print("unlink %s"%path, file=sys.stderr)
         os.unlink(path)
 
 class CleanCommand(Clean):
@@ -131,14 +129,14 @@ cmdclass = {'build_ext': build_ext, 'clean': CleanCommand}
 
 
 def get_requirements():
-    with file(os.path.join(".","requirements.txt"), "r") as req_file:
+    with open(os.path.join(".","requirements.txt")) as req_file:
         reqs = [line.strip() for line in req_file]
     return reqs
 
 
 setup(
     name = 'templatefit',
-    python_requires='==2.7.*',
+    python_requires='==3.*',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -175,7 +173,7 @@ setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
     ],
 
     # What does your project relate to?

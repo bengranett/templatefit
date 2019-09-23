@@ -9,7 +9,7 @@ try:
     # if we are running in a git repo, look up the hash
     __version__ = subprocess.Popen(
         ('git','-C',os.path.dirname(__file__),'describe','--always','--dirty','--broken'),
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0].strip()
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0].strip().decode()
     assert __version__
 except:
     # otherwise check for a version file
