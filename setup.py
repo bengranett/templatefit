@@ -77,7 +77,7 @@ cython_files = [
 
 cython_directives = {
     'embedsignature': True,
-    'language_level': 3,
+    'language_level': 2,
     'boundscheck': False,
     'wraparound': False,
     'nonecheck': False,
@@ -137,7 +137,6 @@ def get_requirements():
 
 setup(
     name = 'templatefit',
-    python_requires='==3.*',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -172,9 +171,6 @@ setup(
         # Pick your license as you wish (should match "license" above)
         'License :: OSI Approved :: GPL License',
 
-        # Specify the Python versions you support here. In particular, ensure
-        # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 3',
     ],
 
     # What does your project relate to?
