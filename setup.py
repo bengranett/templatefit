@@ -15,6 +15,7 @@
     - https://www.digitalocean.com/community/tutorials/how-to-package-and-distribute-python-applications
 
 """
+from __future__ import print_function
 import sys
 
 # Always prefer setuptools over distutils
