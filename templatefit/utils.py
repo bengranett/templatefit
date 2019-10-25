@@ -19,3 +19,13 @@ def load_template_file(filename):
 
     return templates_data, priors
 
+def centroidz(z, pz, window=5):
+    """ """
+    ibest = np.argmax(pz)
+    low = max(0, ibest - window)
+    high = min(len(pz), ibest + window + 1)
+    sel = slice(low, high)
+    z = z[sel]
+    pz = pz[sel]
+    return np.sum(z * pz)/np.sum(pz)
+
