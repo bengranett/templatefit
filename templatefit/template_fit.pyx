@@ -304,8 +304,6 @@ cdef class TemplateFit:
 
 		precomp_gauss = self._precompute_gaussian(sigma, &width, &width_hr)
 
-		self.logger.debug("gauss %s", str(np.array(precomp_gauss)))
-
 		max_amp = 0
 
 		with nogil:
