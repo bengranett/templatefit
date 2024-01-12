@@ -39,9 +39,9 @@ cdef class TemplateFit:
 
 		self.init_prior_z(prior_z)
 
-		self.temp = np.zeros((self.ntemplates, wavelength_scale.shape[0]), dtype=np.float)
-		self.amp = np.zeros(self.ntemplates, dtype=np.float)
-		self.loglike = np.zeros((redshift_grid.shape[0], self.ntemplates), dtype=np.float)
+		self.temp = np.zeros((self.ntemplates, wavelength_scale.shape[0]), dtype=float)
+		self.amp = np.zeros(self.ntemplates, dtype=float)
+		self.loglike = np.zeros((redshift_grid.shape[0], self.ntemplates), dtype=float)
 
 
 	def init_wavelength_scale(self, wavelength_scale):
@@ -260,7 +260,7 @@ cdef class TemplateFit:
 			width[0] = 1
 			width_hr[0] = self.res
 
-		cdef double[:] x = np.zeros(2*width_hr[0]+1, dtype=np.float)
+		cdef double[:] x = np.zeros(2*width_hr[0]+1, dtype=float)
 
 		for i in range(x.shape[0]):
 			j = i - width_hr[0]
@@ -403,7 +403,7 @@ cdef class TemplateFit:
 
 		cdef double [:,:] loglike = self.loglike
 		cdef double [:,:] loglike2 = fit2.loglike
-		cdef double [:,:] combine = np.zeros((loglike.shape[0], loglike.shape[1]), dtype=np.float)
+		cdef double [:,:] combine = np.zeros((loglike.shape[0], loglike.shape[1]), dtype=float)
 
 		with nogil:
 			max_amp = -math.INFINITY
